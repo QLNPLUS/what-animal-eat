@@ -1,6 +1,6 @@
 # What Animals Eat
 
-This branch targets Minecraft 1.20.1 with Forge 47.x.
+This branch targets Minecraft 1.21.1 with NeoForge 21.1.248.
 
 The mod changes breeding foods through the common config file:
 
@@ -21,7 +21,7 @@ Each rule uses `entity_id=food_id`. Use `#tag_id` for an item tag and `*` to app
 
 When this file does not exist, the first server start scans all registered entities and items and writes the detected breeding rules. An existing file is always preserved and read as-is.
 
-Only entities extending Minecraft's `Animal` class are handled. KubeJS is optional. With KubeJS installed, use `WhatAnimalsEatEvents.beforeAnimalFed` and `WhatAnimalsEatEvents.afterAnimalFed`.
+Only entities extending Minecraft's `Animal` class are handled. KubeJS is optional; this branch is compatible with KubeJS NeoForge 2101.7.2 or newer. With KubeJS installed, use `WhatAnimalsEatEvents.beforeAnimalFed` and `WhatAnimalsEatEvents.afterAnimalFed`.
 
 ```js
 // server_scripts/animal_food.js

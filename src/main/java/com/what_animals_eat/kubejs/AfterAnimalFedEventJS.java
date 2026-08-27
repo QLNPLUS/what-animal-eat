@@ -1,11 +1,11 @@
 package com.what_animals_eat.kubejs;
 
-import dev.latvian.mods.kubejs.event.EventJS;
+import dev.latvian.mods.kubejs.event.KubeEvent;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-public final class AfterAnimalFedEventJS extends EventJS {
+public final class AfterAnimalFedEventJS implements KubeEvent {
     private final Player player;
     private final Animal animal;
     private final ItemStack item;

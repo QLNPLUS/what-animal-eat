@@ -1,13 +1,14 @@
 package com.what_animals_eat.kubejs;
 
 import com.what_animals_eat.WhatAnimalsEatKubeHooks;
-import dev.latvian.mods.kubejs.KubeJSPlugin;
 import dev.latvian.mods.kubejs.event.EventGroup;
 import dev.latvian.mods.kubejs.event.EventHandler;
 import dev.latvian.mods.kubejs.event.EventResult;
-import dev.latvian.mods.kubejs.script.BindingsEvent;
+import dev.latvian.mods.kubejs.event.EventGroupRegistry;
+import dev.latvian.mods.kubejs.plugin.KubeJSPlugin;
+import dev.latvian.mods.kubejs.script.BindingRegistry;
 
-public final class WhatAnimalsEatKubeJSPlugin extends KubeJSPlugin {
+public final class WhatAnimalsEatKubeJSPlugin implements KubeJSPlugin {
     public static final EventGroup EVENTS = EventGroup.of("WhatAnimalsEatEvents");
     public static final EventHandler BEFORE_FED = EVENTS
             .server("beforeAnimalFed", () -> BeforeAnimalFedEventJS.class).hasResult();
@@ -30,12 +31,12 @@ public final class WhatAnimalsEatKubeJSPlugin extends KubeJSPlugin {
     }
 
     @Override
-    public void registerEvents() {
-        EVENTS.register();
+    public void registerEvents(EventGroupRegistry registry) {
+        registry.register(EVENTS);
     }
 
     @Override
-    public void registerBindings(BindingsEvent event) {
-        event.add("WhatAnimalsEat", KubeJsBreedingApi.INSTANCE);
+    public void registerBindings(BindingRegistry bindings) {
+        bindings.add("WhatAnimalsEat", KubeJsBreedingApi.INSTANCE);
     }
 }
