@@ -12,6 +12,10 @@ base {
     archivesName = mod_id
 }
 
+tasks.named('jar', Jar).configure {
+    archiveClassifier = 'neoforge-1.21.1'
+}
+
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 sourceSets.main.resources {
