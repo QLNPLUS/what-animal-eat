@@ -6,7 +6,8 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import org.slf4j.Logger;
 
 @Mod(WhatAnimalsEat.MOD_ID)
@@ -20,7 +21,12 @@ public final class WhatAnimalsEat {
     }
 
     @SubscribeEvent
-    public void onServerStarting(ServerStartingEvent event) {
-        WhatAnimalsEatConfig.createDefaultsIfNeeded(event.getServer().overworld());
+    public void onServerAboutToStart(ServerAboutToStartEvent event) {
+        WhatAnimalsEatConfig.createDefaultsIfNeeded(event.getServer());
+    }
+
+    @SubscribeEvent
+    public void onAddReloadListener(AddReloadListenerEvent event) {
+        event.addListener(WhatAnimalsEatConfig.RESOURCE_RELOAD_LISTENER);
     }
 }

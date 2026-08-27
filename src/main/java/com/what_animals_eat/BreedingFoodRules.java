@@ -15,7 +15,7 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -133,7 +133,7 @@ public final class BreedingFoodRules {
     }
 
     /** Scans every registered entity type and item after all mods have registered. */
-    public static List<String> discoverDefaults(ServerLevel level) {
+    public static List<String> discoverDefaults(Level level) {
         List<Item> items = new ArrayList<>();
         for (Item item : BuiltInRegistries.ITEM) {
             items.add(item);
