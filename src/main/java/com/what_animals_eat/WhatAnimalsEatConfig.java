@@ -62,6 +62,20 @@ public final class WhatAnimalsEatConfig {
         configuredEntries = readJsonEntries();
     }
 
+    public static void loadConfigIfPresent() {
+        if (Files.exists(CONFIG_PATH)) {
+            reloadConfig();
+            return;
+        }
+
+        List<String> legacyEntries = readLegacyEntries();
+        if (!legacyEntries.isEmpty()) {
+            writeJson(legacyEntries);
+            reloadConfig();
+            WhatAnimalsEat.LOGGER.info("Migrated {} breeding food rules to {}", legacyEntries.size(), CONFIG_PATH);
+        }
+    }
+
     public static void createDefaultsIfNeeded(MinecraftServer server) {
         if (Files.exists(CONFIG_PATH)) {
             reloadConfig();
@@ -73,6 +87,11 @@ public final class WhatAnimalsEatConfig {
             writeJson(legacyEntries);
             reloadConfig();
             WhatAnimalsEat.LOGGER.info("Migrated {} breeding food rules to {}", legacyEntries.size(), CONFIG_PATH);
+            return;
+        }
+
+        if (server.overworld() == null) {
+            WhatAnimalsEat.LOGGER.error("Cannot generate breeding food defaults before the overworld is available");
             return;
         }
 
