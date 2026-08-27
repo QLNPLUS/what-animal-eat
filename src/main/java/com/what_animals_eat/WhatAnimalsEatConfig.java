@@ -22,7 +22,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
+import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 public final class WhatAnimalsEatConfig {
@@ -34,6 +37,19 @@ public final class WhatAnimalsEatConfig {
             .create();
     private static final Pattern LEGACY_ENTRY = Pattern.compile("\\\"((?:\\\\.|[^\\\"\\\\])*)\\\"");
     private static volatile List<String> configuredEntries = List.of();
+    public static final SimplePreparableReloadListener<Void> RESOURCE_RELOAD_LISTENER =
+            new SimplePreparableReloadListener<>() {
+                @Override
+                protected Void prepare(ResourceManager resourceManager, ProfilerFiller profiler) {
+                    return null;
+                }
+
+                @Override
+                protected void apply(Void ignored, ResourceManager resourceManager, ProfilerFiller profiler) {
+                    reloadConfig();
+                    WhatAnimalsEat.LOGGER.info("Reloaded {} breeding food rules from {}", configuredEntries.size(), CONFIG_PATH);
+                }
+            };
 
     private WhatAnimalsEatConfig() {
     }
@@ -46,7 +62,7 @@ public final class WhatAnimalsEatConfig {
         configuredEntries = readJsonEntries();
     }
 
-    public static void createDefaultsIfNeeded(ServerLevel level) {
+    public static void createDefaultsIfNeeded(MinecraftServer server) {
         if (Files.exists(CONFIG_PATH)) {
             reloadConfig();
             return;
@@ -60,7 +76,7 @@ public final class WhatAnimalsEatConfig {
             return;
         }
 
-        List<String> defaults = BreedingFoodRules.discoverDefaults(level);
+        List<String> defaults = BreedingFoodRules.discoverDefaults(server.overworld());
         writeJson(defaults);
         reloadConfig();
         WhatAnimalsEat.LOGGER.info("Generated {} breeding food rules at {}", defaults.size(), CONFIG_PATH);
