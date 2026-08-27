@@ -1,0 +1,1 @@
+com.what_animals_eat.kubejs.WhatAnimalsEatKubeJSPlugin

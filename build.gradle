@@ -55,14 +55,42 @@ minecraft {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
+    mavenCentral()
+    maven {
+        name = 'BMCLAPI'
+        url = 'https://bmclapi2.bangbang93.com/libraries'
+        content {
+            includeGroup 'net.minecraft'
+            includeGroup 'net.minecraftforge'
+            includeGroup 'com.mojang'
+            includeGroup 'net.minecraftforge.gradle'
+        }
+    }
     maven {
         name = 'MinecraftForge'
         url = 'https://maven.minecraftforge.net/'
+    }
+    maven {
+        name = 'Latvian'
+        url = 'https://maven.latvian.dev/releases'
+    }
+    maven {
+        name = 'Architectury'
+        url = 'https://maven.architectury.dev/'
     }
 }
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    if (project.hasProperty('kubejs_local_jar')) {
+        compileOnly files(project.property('kubejs_local_jar'))
+        if (project.hasProperty('rhino_local_jar')) {
+            compileOnly files(project.property('rhino_local_jar'))
+        }
+    } else {
+        compileOnly fg.deobf('dev.latvian.mods:kubejs-forge:2001.6.5-build.16')
+        compileOnly fg.deobf('dev.latvian.mods:rhino:2001.2.2-build.18')
+    }
 }
 
 tasks.named('processResources', ProcessResources).configure {
