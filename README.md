@@ -2,24 +2,33 @@
 
 This branch targets Minecraft 1.20.1 with Forge 47.x.
 
-The mod changes breeding foods through the common config file:
+The mod changes breeding foods through the JSON config file:
 
-`config/what_animals_eat-common.toml`
+`config/what_animals_eat.json`
 
 Example:
 
-```toml
-breedingRules = [
-  "minecraft:cow=minecraft:apple",
-  "minecraft:pig=minecraft:carrot|minecraft:potato",
-  "minecraft:chicken=#minecraft:flowers",
-  "*=minecraft:golden_carrot"
-]
+```json
+{
+  "minecraft:chicken": [
+    "#minecraft:flowers"
+  ],
+  "minecraft:cow": [
+    "minecraft:apple"
+  ],
+  "minecraft:pig": [
+    "minecraft:carrot",
+    "minecraft:potato"
+  ],
+  "*": [
+    "minecraft:golden_carrot"
+  ]
+}
 ```
 
-Each rule uses `entity_id=food_id`. Use `#tag_id` for an item tag and `*` to apply a rule to every animal. Multiple rules for the same animal are merged. Once an animal has a rule, its vanilla breeding foods are replaced by the configured foods. Restart the server after changing the config.
+Each JSON key is an entity ID and its value is an array of item IDs. Use `#tag_id` for an item tag and `*` to apply a rule to every animal. Multiple foods are listed as separate array values. Once an animal has a rule, its vanilla breeding foods are replaced by the configured foods. Restart the server after changing the config.
 
-When this file does not exist, the first server start scans all registered entities and items and writes the detected breeding rules. An existing file is always preserved and read as-is.
+When this file does not exist, the first server start scans all registered entities and items and writes the detected breeding rules with one JSON entry per line. If the old `what_animals_eat-common.toml` exists, it is read once and migrated to JSON. An existing JSON file is preserved and read as-is.
 
 Only entities extending Minecraft's `Animal` class are handled. KubeJS is optional. With KubeJS installed, use `WhatAnimalsEatEvents.beforeAnimalFed` and `WhatAnimalsEatEvents.afterAnimalFed`.
 

@@ -188,7 +188,7 @@ public final class BreedingFoodRules {
     }
 
     private static List<String> configEntries() {
-        return WhatAnimalsEatConfig.BREEDING_RULES.get().stream().map(String::valueOf).toList();
+        return WhatAnimalsEatConfig.getConfiguredEntries();
     }
 
     private static String normalizeAnimalId(String raw) {
