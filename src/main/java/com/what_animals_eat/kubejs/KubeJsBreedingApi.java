@@ -9,6 +9,7 @@ import dev.latvian.mods.kubejs.util.ListJS;
 import dev.latvian.mods.rhino.Context;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.item.ItemStack;
 
 public final class KubeJsBreedingApi {
@@ -18,7 +19,10 @@ public final class KubeJsBreedingApi {
     }
 
     public boolean set(Context cx, Object animal, Object foods) {
-        return BreedingFoodRules.setRuntimeRule(toAnimalId(animal), parseFoods(cx, foods));
+        List<String> ids = parseFoods(cx, foods);
+        return animal instanceof Animal fedEntity
+                ? BreedingFoodRules.setRuntimeRule(fedEntity, ids)
+                : BreedingFoodRules.setRuntimeRule(toAnimalId(animal), ids);
     }
 
     public boolean setBreedingFoods(Context cx, Object animal, Object foods) {
@@ -27,7 +31,12 @@ public final class KubeJsBreedingApi {
 
     public boolean add(Context cx, Object animal, Object food) {
         List<String> ids = parseFoods(cx, food);
-        return ids.size() == 1 && BreedingFoodRules.addRuntimeFood(toAnimalId(animal), ids.get(0));
+        if (ids.size() != 1) {
+            return false;
+        }
+        return animal instanceof Animal fedEntity
+                ? BreedingFoodRules.addRuntimeFood(fedEntity, ids.get(0))
+                : BreedingFoodRules.addRuntimeFood(toAnimalId(animal), ids.get(0));
     }
 
     public boolean addBreedingFood(Context cx, Object animal, Object food) {
@@ -36,7 +45,12 @@ public final class KubeJsBreedingApi {
 
     public boolean remove(Context cx, Object animal, Object food) {
         List<String> ids = parseFoods(cx, food);
-        return ids.size() == 1 && BreedingFoodRules.removeRuntimeFood(toAnimalId(animal), ids.get(0));
+        if (ids.size() != 1) {
+            return false;
+        }
+        return animal instanceof Animal fedEntity
+                ? BreedingFoodRules.removeRuntimeFood(fedEntity, ids.get(0))
+                : BreedingFoodRules.removeRuntimeFood(toAnimalId(animal), ids.get(0));
     }
 
     public boolean removeBreedingFood(Context cx, Object animal, Object food) {
@@ -44,7 +58,9 @@ public final class KubeJsBreedingApi {
     }
 
     public boolean reset(Object animal) {
-        return BreedingFoodRules.clearRuntimeRule(toAnimalId(animal));
+        return animal instanceof Animal fedEntity
+                ? BreedingFoodRules.clearRuntimeRule(fedEntity)
+                : BreedingFoodRules.clearRuntimeRule(toAnimalId(animal));
     }
 
     public boolean resetBreedingFoods(Object animal) {
@@ -52,7 +68,9 @@ public final class KubeJsBreedingApi {
     }
 
     public List<String> get(Object animal) {
-        return BreedingFoodRules.getEffectiveFoods(toAnimalId(animal));
+        return animal instanceof Animal fedEntity
+                ? BreedingFoodRules.getEffectiveFoods(fedEntity)
+                : BreedingFoodRules.getEffectiveFoods(toAnimalId(animal));
     }
 
     public List<String> getBreedingFoods(Object animal) {
