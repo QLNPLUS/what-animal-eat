@@ -48,7 +48,7 @@ WhatAnimalsEatEvents.afterAnimalFed(event => {
 })
 ```
 
-To change only the fed animal type after a successful feeding, pass the event entity directly. Other animal types are unchanged:
+To change only the individual entity that was fed after a successful feeding, pass the event entity directly. Other entities, including animals of the same type, are unchanged:
 
 ```js
 WhatAnimalsEatEvents.afterAnimalFed(event => {
@@ -57,4 +57,4 @@ WhatAnimalsEatEvents.afterAnimalFed(event => {
 })
 ```
 
-The API changes rules immediately for the current server. `setBreedingFoods`, `addBreedingFood`, `removeBreedingFood`, `resetBreedingFoods`, and `getBreedingFoods` accept either an entity ID string or an animal entity object. `setBreedingFoods` accepts one item ID, an array of item IDs, an item tag such as `#minecraft:flowers`, or KubeJS item stacks. `resetBreedingFoods` removes the runtime override and returns to the config rule.
+The API changes rules immediately for the current server. Passing an entity ID string changes all entities of that type; passing an animal entity object changes only that entity. `setBreedingFoods`, `addBreedingFood`, `removeBreedingFood`, `resetBreedingFoods`, and `getBreedingFoods` accept either form. `setBreedingFoods` accepts one item ID, an array of item IDs, an item tag such as `#minecraft:flowers`, or KubeJS item stacks. `resetBreedingFoods` removes the runtime override and returns to the config rule.
