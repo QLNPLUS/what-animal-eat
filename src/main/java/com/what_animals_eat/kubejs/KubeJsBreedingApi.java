@@ -7,6 +7,7 @@ import com.what_animals_eat.BreedingFoodRules;
 import dev.latvian.mods.kubejs.item.ItemStackJS;
 import dev.latvian.mods.kubejs.util.ListJS;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 
 public final class KubeJsBreedingApi {
@@ -15,46 +16,54 @@ public final class KubeJsBreedingApi {
     private KubeJsBreedingApi() {
     }
 
-    public boolean set(String animalId, Object foods) {
-        return BreedingFoodRules.setRuntimeRule(animalId, parseFoods(foods));
+    public boolean set(Object animal, Object foods) {
+        return BreedingFoodRules.setRuntimeRule(toAnimalId(animal), parseFoods(foods));
     }
 
-    public boolean setBreedingFoods(String animalId, Object foods) {
-        return set(animalId, foods);
+    public boolean setBreedingFoods(Object animal, Object foods) {
+        return set(animal, foods);
     }
 
-    public boolean add(String animalId, Object food) {
+    public boolean add(Object animal, Object food) {
         List<String> ids = parseFoods(food);
-        return ids.size() == 1 && BreedingFoodRules.addRuntimeFood(animalId, ids.get(0));
+        return ids.size() == 1 && BreedingFoodRules.addRuntimeFood(toAnimalId(animal), ids.get(0));
     }
 
-    public boolean addBreedingFood(String animalId, Object food) {
-        return add(animalId, food);
+    public boolean addBreedingFood(Object animal, Object food) {
+        return add(animal, food);
     }
 
-    public boolean remove(String animalId, Object food) {
+    public boolean remove(Object animal, Object food) {
         List<String> ids = parseFoods(food);
-        return ids.size() == 1 && BreedingFoodRules.removeRuntimeFood(animalId, ids.get(0));
+        return ids.size() == 1 && BreedingFoodRules.removeRuntimeFood(toAnimalId(animal), ids.get(0));
     }
 
-    public boolean removeBreedingFood(String animalId, Object food) {
-        return remove(animalId, food);
+    public boolean removeBreedingFood(Object animal, Object food) {
+        return remove(animal, food);
     }
 
-    public boolean reset(String animalId) {
-        return BreedingFoodRules.clearRuntimeRule(animalId);
+    public boolean reset(Object animal) {
+        return BreedingFoodRules.clearRuntimeRule(toAnimalId(animal));
     }
 
-    public boolean resetBreedingFoods(String animalId) {
-        return reset(animalId);
+    public boolean resetBreedingFoods(Object animal) {
+        return reset(animal);
     }
 
-    public List<String> get(String animalId) {
-        return BreedingFoodRules.getEffectiveFoods(animalId);
+    public List<String> get(Object animal) {
+        return BreedingFoodRules.getEffectiveFoods(toAnimalId(animal));
     }
 
-    public List<String> getBreedingFoods(String animalId) {
-        return get(animalId);
+    public List<String> getBreedingFoods(Object animal) {
+        return get(animal);
+    }
+
+    private static String toAnimalId(Object animal) {
+        if (animal instanceof Entity entity) {
+            var id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
+            return id == null ? null : id.toString();
+        }
+        return animal == null ? null : animal.toString();
     }
 
     private static List<String> parseFoods(Object value) {
