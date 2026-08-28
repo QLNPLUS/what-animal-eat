@@ -26,7 +26,7 @@ Example:
 }
 ```
 
-Each JSON key is an entity ID and its value is an array of item IDs. Use `#tag_id` for an item tag and `*` to apply a rule to every animal. Multiple foods are listed as separate array values. Once an animal has a rule, its vanilla breeding foods are replaced by the configured foods. Restart the server after changing the config.
+Each JSON key is an entity ID and its value is an array of item IDs. Use `#tag_id` for an item tag and `*` to apply a rule to every animal. Multiple foods are listed as separate array values. Once an animal has a rule, its vanilla breeding foods are replaced by the configured foods. Run `/reload` after changing the config to apply it without restarting the server.
 
 When this file does not exist, the first server start scans all registered entities and items and writes the detected breeding rules with one JSON entry per line. If the old `what_animals_eat-common.toml` exists, it is read once and migrated to JSON. An existing JSON file is preserved and read as-is.
 
@@ -48,4 +48,13 @@ WhatAnimalsEatEvents.afterAnimalFed(event => {
 })
 ```
 
-The API changes rules immediately for the current server. `setBreedingFoods` accepts one item ID, an array of item IDs, an item tag such as `#minecraft:flowers`, or KubeJS item stacks. `resetBreedingFoods` removes the runtime override and returns to the config rule.
+To change only the fed animal type after a successful feeding, pass the event entity directly. Other animal types are unchanged:
+
+```js
+WhatAnimalsEatEvents.afterAnimalFed(event => {
+  Client.tell(event.player.username + ' fed ' + event.animal + ' with ' + event.item)
+  WhatAnimalsEat.setBreedingFoods(event.animal, ['minecraft:apple', 'minecraft:golden_carrot'])
+})
+```
+
+The API changes rules immediately for the current server. `setBreedingFoods`, `addBreedingFood`, `removeBreedingFood`, `resetBreedingFoods`, and `getBreedingFoods` accept either an entity ID string or an animal entity object. `setBreedingFoods` accepts one item ID, an array of item IDs, an item tag such as `#minecraft:flowers`, or KubeJS item stacks. `resetBreedingFoods` removes the runtime override and returns to the config rule.
