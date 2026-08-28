@@ -3,6 +3,7 @@ package com.what_animals_eat.kubejs;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.what_animals_eat.AttractantRules;
 import com.what_animals_eat.BreedingFoodRules;
 import dev.latvian.mods.kubejs.item.ItemStackJS;
 import dev.latvian.mods.kubejs.util.ListJS;
@@ -28,6 +29,13 @@ public final class KubeJsBreedingApi {
         return set(animal, foods);
     }
 
+    public boolean setAttractant(Object animal, Object foods) {
+        List<String> ids = parseFoods(foods);
+        return animal instanceof Animal fedEntity
+                ? AttractantRules.setRuntimeRule(fedEntity, ids)
+                : AttractantRules.setRuntimeRule(toAnimalId(animal), ids);
+    }
+
     public boolean add(Object animal, Object food) {
         List<String> ids = parseFoods(food);
         if (ids.size() != 1) {
@@ -40,6 +48,16 @@ public final class KubeJsBreedingApi {
 
     public boolean addBreedingFood(Object animal, Object food) {
         return add(animal, food);
+    }
+
+    public boolean addAttractant(Object animal, Object food) {
+        List<String> ids = parseFoods(food);
+        if (ids.size() != 1) {
+            return false;
+        }
+        return animal instanceof Animal fedEntity
+                ? AttractantRules.addRuntimeFood(fedEntity, ids.get(0))
+                : AttractantRules.addRuntimeFood(toAnimalId(animal), ids.get(0));
     }
 
     public boolean remove(Object animal, Object food) {
@@ -56,6 +74,16 @@ public final class KubeJsBreedingApi {
         return remove(animal, food);
     }
 
+    public boolean removeAttractant(Object animal, Object food) {
+        List<String> ids = parseFoods(food);
+        if (ids.size() != 1) {
+            return false;
+        }
+        return animal instanceof Animal fedEntity
+                ? AttractantRules.removeRuntimeFood(fedEntity, ids.get(0))
+                : AttractantRules.removeRuntimeFood(toAnimalId(animal), ids.get(0));
+    }
+
     public boolean reset(Object animal) {
         return animal instanceof Animal fedEntity
                 ? BreedingFoodRules.clearRuntimeRule(fedEntity)
@@ -66,6 +94,12 @@ public final class KubeJsBreedingApi {
         return reset(animal);
     }
 
+    public boolean resetAttractant(Object animal) {
+        return animal instanceof Animal fedEntity
+                ? AttractantRules.clearRuntimeRule(fedEntity)
+                : AttractantRules.clearRuntimeRule(toAnimalId(animal));
+    }
+
     public List<String> get(Object animal) {
         return animal instanceof Animal fedEntity
                 ? BreedingFoodRules.getEffectiveFoods(fedEntity)
@@ -74,6 +108,12 @@ public final class KubeJsBreedingApi {
 
     public List<String> getBreedingFoods(Object animal) {
         return get(animal);
+    }
+
+    public List<String> getAttractants(Object animal) {
+        return animal instanceof Animal fedEntity
+                ? AttractantRules.getEffectiveAttractants(fedEntity)
+                : AttractantRules.getEffectiveAttractants(toAnimalId(animal));
     }
 
     private static String toAnimalId(Object animal) {
