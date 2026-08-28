@@ -96,17 +96,49 @@ public final class WhatAnimalsEatConfig {
             return;
         }
 
+        List<String> foodDefaults = BreedingFoodRules.discoverDefaults(server.overworld());
         if (!Files.exists(FOOD_CONFIG_PATH)) {
-            List<String> defaults = BreedingFoodRules.discoverDefaults(server.overworld());
-            writeJson(FOOD_CONFIG_PATH, defaults);
-            WhatAnimalsEat.LOGGER.info("Generated {} breeding food rules at {}", defaults.size(), FOOD_CONFIG_PATH);
+            writeJson(FOOD_CONFIG_PATH, foodDefaults);
+            WhatAnimalsEat.LOGGER.info("Generated {} breeding food rules at {}", foodDefaults.size(), FOOD_CONFIG_PATH);
+        } else {
+            appendMissingDefaults(FOOD_CONFIG_PATH, foodDefaults, "breeding food");
         }
+
+        List<String> attractantDefaults = AttractantRules.discoverDefaults(server.overworld());
         if (!Files.exists(ATTRACTANT_CONFIG_PATH)) {
-            List<String> defaults = AttractantRules.discoverDefaults(server.overworld());
-            writeJson(ATTRACTANT_CONFIG_PATH, defaults);
-            WhatAnimalsEat.LOGGER.info("Generated {} attractant rules at {}", defaults.size(), ATTRACTANT_CONFIG_PATH);
+            writeJson(ATTRACTANT_CONFIG_PATH, attractantDefaults);
+            WhatAnimalsEat.LOGGER.info("Generated {} attractant rules at {}", attractantDefaults.size(), ATTRACTANT_CONFIG_PATH);
+        } else {
+            appendMissingDefaults(ATTRACTANT_CONFIG_PATH, attractantDefaults, "attractant");
         }
         reloadConfig();
+    }
+
+    private static void appendMissingDefaults(Path path, List<String> defaults, String ruleName) {
+        List<String> configured = readJsonEntries(path, ruleName.equals("attractant") ? "attractants" : "breedingRules");
+        Set<String> configuredAnimals = new LinkedHashSet<>();
+        for (String entry : configured) {
+            int separator = entry.indexOf('=');
+            if (separator > 0) {
+                configuredAnimals.add(entry.substring(0, separator).trim());
+            }
+        }
+
+        List<String> additions = new ArrayList<>();
+        for (String entry : defaults) {
+            int separator = entry.indexOf('=');
+            if (separator > 0 && configuredAnimals.add(entry.substring(0, separator).trim())) {
+                additions.add(entry);
+            }
+        }
+        if (additions.isEmpty()) {
+            return;
+        }
+
+        List<String> merged = new ArrayList<>(configured);
+        merged.addAll(additions);
+        writeJson(path, merged);
+        WhatAnimalsEat.LOGGER.info("Added {} new {} rules to {}", additions.size(), ruleName, path);
     }
 
     private static List<String> readJsonEntries(Path path, String wrapperKey) {

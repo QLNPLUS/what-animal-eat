@@ -32,6 +32,8 @@ Each JSON key is an entity ID and its value is an array of item IDs. Use `#tag_i
 
 When either file does not exist, the first server start scans registered entities and their vanilla rules and writes the detected defaults. The old `what_animals_eat.json` and `what_animals_eat-common.toml` files are migrated to `what_animals_eat_food.json` when present. Existing JSON files are preserved and read as-is.
 
+On every server start, registered animals are scanned again. If a newly installed mod adds an animal with detected breeding or attractant items, its missing entity ID is appended to the corresponding JSON file with the detected defaults. Existing entity entries and their custom item lists are never overwritten.
+
 Only entities extending Minecraft's `Animal` class are handled. KubeJS is optional. With KubeJS installed, use `WhatAnimalsEatEvents.beforeAnimalFed` and `WhatAnimalsEatEvents.afterAnimalFed`.
 
 ```js
