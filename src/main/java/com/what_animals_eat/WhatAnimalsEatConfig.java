@@ -29,14 +29,17 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.neoforged.fml.loading.FMLPaths;
 
 public final class WhatAnimalsEatConfig {
-    private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("what_animals_eat.json");
+    private static final Path FOOD_CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("what_animals_eat_food.json");
+    private static final Path ATTRACTANT_CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("what_animals_eat_attractant.json");
+    private static final Path LEGACY_JSON_CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("what_animals_eat.json");
     private static final Path LEGACY_CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("what_animals_eat-common.toml");
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .disableHtmlEscaping()
             .create();
     private static final Pattern LEGACY_ENTRY = Pattern.compile("\\\"((?:\\\\.|[^\\\"\\\\])*)\\\"");
-    private static volatile List<String> configuredEntries = List.of();
+    private static volatile List<String> configuredFoodEntries = List.of();
+    private static volatile List<String> configuredAttractantEntries = List.of();
     public static final SimplePreparableReloadListener<Void> RESOURCE_RELOAD_LISTENER =
             new SimplePreparableReloadListener<>() {
                 @Override
@@ -47,73 +50,110 @@ public final class WhatAnimalsEatConfig {
                 @Override
                 protected void apply(Void ignored, ResourceManager resourceManager, ProfilerFiller profiler) {
                     reloadConfig();
-                    WhatAnimalsEat.LOGGER.info("Reloaded {} breeding food rules from {}", configuredEntries.size(), CONFIG_PATH);
+                    WhatAnimalsEat.LOGGER.info("Reloaded {} breeding food rules from {}", configuredFoodEntries.size(), FOOD_CONFIG_PATH);
+                    WhatAnimalsEat.LOGGER.info("Reloaded {} attractant rules from {}", configuredAttractantEntries.size(), ATTRACTANT_CONFIG_PATH);
                 }
             };
 
     private WhatAnimalsEatConfig() {
     }
 
-    public static List<String> getConfiguredEntries() {
-        return configuredEntries;
+    public static List<String> getFoodConfiguredEntries() {
+        return configuredFoodEntries;
+    }
+
+    public static List<String> getAttractantConfiguredEntries() {
+        return configuredAttractantEntries;
     }
 
     public static void reloadConfig() {
-        configuredEntries = readJsonEntries();
+        configuredFoodEntries = readJsonEntries(FOOD_CONFIG_PATH, "breedingRules");
+        configuredAttractantEntries = readJsonEntries(ATTRACTANT_CONFIG_PATH, "attractants");
     }
 
     public static void loadConfigIfPresent() {
-        if (Files.exists(CONFIG_PATH)) {
-            reloadConfig();
-            return;
+        if (!Files.exists(FOOD_CONFIG_PATH)) {
+            if (Files.exists(LEGACY_JSON_CONFIG_PATH)) {
+                List<String> legacyJsonEntries = readJsonEntries(LEGACY_JSON_CONFIG_PATH, "breedingRules");
+                if (!legacyJsonEntries.isEmpty()) {
+                    writeJson(FOOD_CONFIG_PATH, legacyJsonEntries);
+                    WhatAnimalsEat.LOGGER.info("Migrated {} breeding food rules to {}", legacyJsonEntries.size(), FOOD_CONFIG_PATH);
+                }
+            } else {
+                List<String> legacyEntries = readLegacyEntries();
+                if (!legacyEntries.isEmpty()) {
+                    writeJson(FOOD_CONFIG_PATH, legacyEntries);
+                    WhatAnimalsEat.LOGGER.info("Migrated {} breeding food rules to {}", legacyEntries.size(), FOOD_CONFIG_PATH);
+                }
+            }
         }
-
-        List<String> legacyEntries = readLegacyEntries();
-        if (!legacyEntries.isEmpty()) {
-            writeJson(legacyEntries);
-            reloadConfig();
-            WhatAnimalsEat.LOGGER.info("Migrated {} breeding food rules to {}", legacyEntries.size(), CONFIG_PATH);
-        }
+        reloadConfig();
     }
 
     public static void createDefaultsIfNeeded(MinecraftServer server) {
-        if (Files.exists(CONFIG_PATH)) {
-            reloadConfig();
-            return;
-        }
-
-        List<String> legacyEntries = readLegacyEntries();
-        if (!legacyEntries.isEmpty()) {
-            writeJson(legacyEntries);
-            reloadConfig();
-            WhatAnimalsEat.LOGGER.info("Migrated {} breeding food rules to {}", legacyEntries.size(), CONFIG_PATH);
-            return;
-        }
-
         if (server.overworld() == null) {
             WhatAnimalsEat.LOGGER.error("Cannot generate breeding food defaults before the overworld is available");
             return;
         }
 
-        List<String> defaults = BreedingFoodRules.discoverDefaults(server.overworld());
-        writeJson(defaults);
+        List<String> foodDefaults = BreedingFoodRules.discoverDefaults(server.overworld());
+        if (!Files.exists(FOOD_CONFIG_PATH)) {
+            writeJson(FOOD_CONFIG_PATH, foodDefaults);
+            WhatAnimalsEat.LOGGER.info("Generated {} breeding food rules at {}", foodDefaults.size(), FOOD_CONFIG_PATH);
+        } else {
+            appendMissingDefaults(FOOD_CONFIG_PATH, foodDefaults, "breeding food");
+        }
+
+        List<String> attractantDefaults = AttractantRules.discoverDefaults(server.overworld());
+        if (!Files.exists(ATTRACTANT_CONFIG_PATH)) {
+            writeJson(ATTRACTANT_CONFIG_PATH, attractantDefaults);
+            WhatAnimalsEat.LOGGER.info("Generated {} attractant rules at {}", attractantDefaults.size(), ATTRACTANT_CONFIG_PATH);
+        } else {
+            appendMissingDefaults(ATTRACTANT_CONFIG_PATH, attractantDefaults, "attractant");
+        }
         reloadConfig();
-        WhatAnimalsEat.LOGGER.info("Generated {} breeding food rules at {}", defaults.size(), CONFIG_PATH);
     }
 
-    private static List<String> readJsonEntries() {
-        if (!Files.exists(CONFIG_PATH)) {
+    private static void appendMissingDefaults(Path path, List<String> defaults, String ruleName) {
+        List<String> configured = readJsonEntries(path, ruleName.equals("attractant") ? "attractants" : "breedingRules");
+        Set<String> configuredAnimals = new LinkedHashSet<>();
+        for (String entry : configured) {
+            int separator = entry.indexOf('=');
+            if (separator > 0) {
+                configuredAnimals.add(entry.substring(0, separator).trim());
+            }
+        }
+
+        List<String> additions = new ArrayList<>();
+        for (String entry : defaults) {
+            int separator = entry.indexOf('=');
+            if (separator > 0 && configuredAnimals.add(entry.substring(0, separator).trim())) {
+                additions.add(entry);
+            }
+        }
+        if (additions.isEmpty()) {
+            return;
+        }
+
+        List<String> merged = new ArrayList<>(configured);
+        merged.addAll(additions);
+        writeJson(path, merged);
+        WhatAnimalsEat.LOGGER.info("Added {} new {} rules to {}", additions.size(), ruleName, path);
+    }
+
+    private static List<String> readJsonEntries(Path path, String wrapperKey) {
+        if (!Files.exists(path)) {
             return List.of();
         }
 
-        try (Reader reader = Files.newBufferedReader(CONFIG_PATH, StandardCharsets.UTF_8)) {
+        try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
             JsonElement root = JsonParser.parseReader(reader);
             if (!root.isJsonObject()) {
                 throw new JsonParseException("The root value must be a JSON object");
             }
 
             JsonObject rulesObject = root.getAsJsonObject();
-            JsonElement wrappedRules = rulesObject.get("breedingRules");
+            JsonElement wrappedRules = rulesObject.get(wrapperKey);
             if (wrappedRules != null && wrappedRules.isJsonObject()) {
                 rulesObject = wrappedRules.getAsJsonObject();
             }
@@ -137,7 +177,7 @@ public final class WhatAnimalsEatConfig {
             }
             return List.copyOf(entries);
         } catch (IOException | JsonParseException | IllegalStateException exception) {
-            WhatAnimalsEat.LOGGER.error("Unable to read breeding food config {}", CONFIG_PATH, exception);
+            WhatAnimalsEat.LOGGER.error("Unable to read JSON config {}", path, exception);
             return List.of();
         }
     }
@@ -168,7 +208,7 @@ public final class WhatAnimalsEatConfig {
         }
     }
 
-    private static void writeJson(List<String> entries) {
+    static void writeJson(Path path, List<String> entries) {
         Map<String, Set<String>> grouped = new TreeMap<>();
         for (String raw : entries) {
             int separator = raw.indexOf('=');
@@ -193,12 +233,12 @@ public final class WhatAnimalsEatConfig {
         }
 
         try {
-            Files.createDirectories(CONFIG_PATH.getParent());
-            try (Writer writer = Files.newBufferedWriter(CONFIG_PATH, StandardCharsets.UTF_8)) {
+            Files.createDirectories(path.getParent());
+            try (Writer writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
                 GSON.toJson(root, writer);
             }
         } catch (IOException exception) {
-            WhatAnimalsEat.LOGGER.error("Unable to write breeding food config {}", CONFIG_PATH, exception);
+            WhatAnimalsEat.LOGGER.error("Unable to write JSON config {}", path, exception);
         }
     }
 }

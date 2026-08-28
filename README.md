@@ -2,9 +2,11 @@
 
 This branch targets Minecraft 1.21.1 with NeoForge 21.1.248.
 
-The mod changes breeding foods through the JSON config file:
+The mod changes breeding foods and player-held attractants through separate JSON config files:
 
-`config/what_animals_eat.json`
+`config/what_animals_eat_food.json`
+
+`config/what_animals_eat_attractant.json`
 
 Example:
 
@@ -26,9 +28,11 @@ Example:
 }
 ```
 
-Each JSON key is an entity ID and its value is an array of item IDs. Use `#tag_id` for an item tag and `*` to apply a rule to every animal. Multiple foods are listed as separate array values. Once an animal has a rule, its vanilla breeding foods are replaced by the configured foods. Run `/reload` after changing the config to apply it without restarting the server.
+Each JSON key is an entity ID and its value is an array of item IDs. Use `#tag_id` for an item tag and `*` to apply a rule to every animal. Multiple items are listed as separate array values. A food rule replaces the animal's vanilla breeding foods. An attractant rule controls which items in a player's hand make the animal follow the player. Run `/reload` after changing either config to apply it without restarting the server.
 
-When this file does not exist, the first server start scans all registered entities and items and writes the detected breeding rules with one JSON entry per line. If the old `what_animals_eat-common.toml` exists, it is read once and migrated to JSON. An existing JSON file is preserved and read as-is.
+When either file does not exist, the first server start scans registered entities and their vanilla rules and writes the detected defaults. The old `what_animals_eat.json` and `what_animals_eat-common.toml` files are migrated to `what_animals_eat_food.json` when present. Existing JSON files are preserved and read as-is.
+
+On every server start, registered animals are scanned again. If a newly installed mod adds an animal with detected breeding or attractant items, its missing entity ID is appended to the corresponding JSON file with the detected defaults. Existing entity entries and their custom item lists are never overwritten.
 
 Only entities extending Minecraft's `Animal` class are handled. KubeJS is optional; this branch is compatible with KubeJS NeoForge 2101.7.2 or newer. With KubeJS installed, use `WhatAnimalsEatEvents.beforeAnimalFed` and `WhatAnimalsEatEvents.afterAnimalFed`.
 
@@ -36,6 +40,8 @@ Only entities extending Minecraft's `Animal` class are handled. KubeJS is option
 // server_scripts/animal_food.js
 WhatAnimalsEat.setBreedingFoods('minecraft:cow', ['minecraft:apple', 'minecraft:golden_carrot'])
 WhatAnimalsEat.addBreedingFood('minecraft:pig', 'minecraft:beetroot')
+WhatAnimalsEat.setAttractant('minecraft:cow', ['minecraft:apple', 'minecraft:golden_carrot'])
+WhatAnimalsEat.addAttractant('minecraft:pig', 'minecraft:beetroot')
 
 WhatAnimalsEatEvents.beforeAnimalFed(event => {
   if (event.animal.id == 'minecraft:cow') {
@@ -57,4 +63,4 @@ WhatAnimalsEatEvents.afterAnimalFed(event => {
 })
 ```
 
-The API changes rules immediately for the current server. Passing an entity ID string changes all entities of that type; passing an animal entity object changes only that entity. `setBreedingFoods`, `addBreedingFood`, `removeBreedingFood`, `resetBreedingFoods`, and `getBreedingFoods` accept either form. `setBreedingFoods` accepts one item ID, an array of item IDs, an item tag such as `#minecraft:flowers`, or KubeJS item stacks. `resetBreedingFoods` removes the runtime override and returns to the config rule.
+The API changes rules immediately for the current server. Passing an entity ID string changes all entities of that type; passing an animal entity object changes only that entity and saves the override in its persistent entity NBT. The same applies to attractants. `setBreedingFoods` and `setAttractant` accept one item ID, an array of item IDs, an item tag such as `#minecraft:flowers`, or KubeJS item stacks. The `add`, `remove`, `reset`, and `get` variants are available for both rule types.

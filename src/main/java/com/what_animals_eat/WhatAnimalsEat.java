@@ -7,8 +7,10 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.minecraft.world.entity.animal.Animal;
 import org.slf4j.Logger;
 
 @Mod(WhatAnimalsEat.MOD_ID)
@@ -29,6 +31,14 @@ public final class WhatAnimalsEat {
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         WhatAnimalsEatConfig.createDefaultsIfNeeded(event.getServer());
+        AttractantHandler.configureExisting(event.getServer());
+    }
+
+    @SubscribeEvent
+    public void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (!event.getLevel().isClientSide && event.getEntity() instanceof Animal animal) {
+            AttractantHandler.configure(animal);
+        }
     }
 
     @SubscribeEvent

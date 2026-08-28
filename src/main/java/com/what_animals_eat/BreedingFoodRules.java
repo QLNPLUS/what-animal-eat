@@ -9,7 +9,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.mojang.logging.LogUtils;
@@ -29,7 +28,6 @@ public final class BreedingFoodRules {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String ALL_ANIMALS = "*";
     private static final Map<String, Set<String>> RUNTIME_RULES = new ConcurrentHashMap<>();
-    private static final Map<UUID, Set<String>> RUNTIME_ENTITY_RULES = new ConcurrentHashMap<>();
     private static volatile List<String> lastConfig = List.of();
     private static volatile ParsedRules configRules = ParsedRules.EMPTY;
 
@@ -44,7 +42,7 @@ public final class BreedingFoodRules {
 
     public static FoodRule forAnimal(Animal animal) {
         ParsedRules config = configRules();
-        Set<String> runtimeEntity = RUNTIME_ENTITY_RULES.get(animal.getUUID());
+        Set<String> runtimeEntity = EntityRuleData.get(animal, EntityRuleData.FOOD_KEY);
         if (runtimeEntity != null) {
             return FoodRule.parse(runtimeEntity);
         }
@@ -85,7 +83,7 @@ public final class BreedingFoodRules {
         if (foodIds != null && !foodIds.isEmpty() && normalized.isEmpty()) {
             return false;
         }
-        RUNTIME_ENTITY_RULES.put(animal.getUUID(), Set.copyOf(normalized));
+        EntityRuleData.put(animal, EntityRuleData.FOOD_KEY, normalized);
         return true;
     }
 
@@ -115,11 +113,10 @@ public final class BreedingFoodRules {
         if (food.isEmpty()) {
             return false;
         }
-        RUNTIME_ENTITY_RULES.compute(animal.getUUID(), (ignored, old) -> {
-            Set<String> result = old == null ? new LinkedHashSet<>() : new LinkedHashSet<>(old);
-            result.addAll(food);
-            return Set.copyOf(result);
-        });
+        Set<String> current = EntityRuleData.get(animal, EntityRuleData.FOOD_KEY);
+        Set<String> updated = new LinkedHashSet<>(current == null ? Set.of() : current);
+        updated.addAll(food);
+        EntityRuleData.put(animal, EntityRuleData.FOOD_KEY, updated);
         return true;
     }
 
@@ -129,14 +126,14 @@ public final class BreedingFoodRules {
         }
         String key = entityTypeId(animal);
         Set<String> food = normalizeFoodIds(List.of(foodId), "runtime rule for " + key);
-        Set<String> current = RUNTIME_ENTITY_RULES.get(animal.getUUID());
+        Set<String> current = EntityRuleData.get(animal, EntityRuleData.FOOD_KEY);
         if (food.isEmpty() || current == null) {
             return false;
         }
         Set<String> updated = new LinkedHashSet<>(current);
         boolean changed = updated.removeAll(food);
         if (changed) {
-            RUNTIME_ENTITY_RULES.put(animal.getUUID(), Set.copyOf(updated));
+            EntityRuleData.put(animal, EntityRuleData.FOOD_KEY, updated);
         }
         return changed;
     }
@@ -165,7 +162,7 @@ public final class BreedingFoodRules {
     }
 
     public static boolean clearRuntimeRule(Animal animal) {
-        return animal != null && RUNTIME_ENTITY_RULES.remove(animal.getUUID()) != null;
+        return animal != null && EntityRuleData.remove(animal, EntityRuleData.FOOD_KEY);
     }
 
     public static List<String> getEffectiveFoods(String animalId) {
@@ -195,7 +192,7 @@ public final class BreedingFoodRules {
         if (animal == null) {
             return List.of();
         }
-        Set<String> runtimeEntity = RUNTIME_ENTITY_RULES.get(animal.getUUID());
+        Set<String> runtimeEntity = EntityRuleData.get(animal, EntityRuleData.FOOD_KEY);
         if (runtimeEntity != null) {
             return List.copyOf(runtimeEntity);
         }
@@ -259,7 +256,7 @@ public final class BreedingFoodRules {
     }
 
     private static List<String> configEntries() {
-        return WhatAnimalsEatConfig.getConfiguredEntries();
+        return WhatAnimalsEatConfig.getFoodConfiguredEntries();
     }
 
     private static String normalizeAnimalId(String raw) {
@@ -337,7 +334,7 @@ public final class BreedingFoodRules {
             this.identifiers = List.copyOf(identifiers);
         }
 
-        private static FoodRule parse(Collection<String> ids) {
+        public static FoodRule parse(Collection<String> ids) {
             Set<Item> items = new HashSet<>();
             Set<TagKey<Item>> tags = new HashSet<>();
             List<String> identifiers = new ArrayList<>();
